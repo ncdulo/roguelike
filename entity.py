@@ -24,6 +24,7 @@ class Entity:
         # Move the entity by a given amount
         self.x += dx;
         self.y += dy;
+
     def distance_to(self, other):
         dx = other.x - self.x
         dy = other.y - self.y
