@@ -1,6 +1,8 @@
-import tcod as libtcod
+import libtcodpy as libtcod
 
 from game_messages import Message
+
+
 class Inventory:
     def __init__(self, capacity):
         self.capacity = capacity
@@ -12,7 +14,7 @@ class Inventory:
         if len(self.items) >= self.capacity:
             results.append({
                 'item_added': None,
-                'message': Message('You cannot carry any more, your inventory is full.', libtcod.yellow)
+                'message': Message('You cannot carry any more, your inventory is full', libtcod.yellow)
             })
         else:
             results.append({
@@ -30,7 +32,7 @@ class Inventory:
         item_component = item_entity.item
 
         if item_component.use_function is None:
-            results.append({'message': Message('The {0} cannot be used.'.format(item_entity.name), libtcod.yellow)})
+            results.append({'message': Message('The {0} cannot be used'.format(item_entity.name), libtcod.yellow)})
         else:
             if item_component.targeting and not (kwargs.get('target_x') or kwargs.get('target_y')):
                 results.append({'targeting': item_entity})
@@ -48,7 +50,7 @@ class Inventory:
 
     def remove_item(self, item):
         self.items.remove(item)
-    
+
     def drop_item(self, item):
         results = []
 
@@ -56,7 +58,7 @@ class Inventory:
         item.y = self.owner.y
 
         self.remove_item(item)
-        results.append({'item_dropped': item, 'message': Message('You dropped the {0}'.format(item.name), libtcod.yellow)})
+        results.append({'item_dropped': item, 'message': Message('You dropped the {0}'.format(item.name),
+                                                                 libtcod.yellow)})
 
         return results
-

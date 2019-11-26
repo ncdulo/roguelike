@@ -1,4 +1,4 @@
-import tcod as libtcod
+import libtcodpy as libtcod
 
 from game_states import GameStates
 
@@ -12,13 +12,6 @@ def handle_keys(key, game_state):
         return handle_targeting_keys(key)
     elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
         return handle_inventory_keys(key)
-
-    return {}
-
-
-def handle_targeting_keys(key):
-    if key.vk == libtcod.KEY_ESCAPE:
-        return {'exit': True}
 
     return {}
 
@@ -46,21 +39,44 @@ def handle_player_turn_keys(key):
 
     if key_char == 'g':
         return {'pickup': True}
+
     elif key_char == 'i':
         return {'show_inventory': True}
+
     elif key_char == 'd':
         return {'drop_inventory': True}
 
-    # Other keys
     if key.vk == libtcod.KEY_ENTER and key.lalt:
-        # Alt+Enter: toggle fullscreen
+        # Alt+Enter: toggle full screen
         return {'fullscreen': True}
-
     elif key.vk == libtcod.KEY_ESCAPE:
         # Exit the game
         return {'exit': True}
 
     # No key was pressed
+    return {}
+
+
+def handle_targeting_keys(key):
+    if key.vk == libtcod.KEY_ESCAPE:
+        return {'exit': True}
+
+    return {}
+
+
+def handle_player_dead_keys(key):
+    key_char = chr(key.c)
+
+    if key_char == 'i':
+        return {'show_inventory': True}
+
+    if key.vk == libtcod.KEY_ENTER and key.lalt:
+        # Alt+Enter: toggle full screen
+        return {'fullscreen': True}
+    elif key.vk == libtcod.KEY_ESCAPE:
+        # Exit the menu
+        return {'exit': True}
+
     return {}
 
 
@@ -79,20 +95,6 @@ def handle_inventory_keys(key):
 
     return {}
 
-def handle_player_dead_keys(key):
-    key_char = chr(key.c)
-
-    if key_char == 'i':
-        return {'show_inventory': True}
-
-    if key.vk == libtcod.KEY_ENTER and key.lalt:
-        # Alt+Enter: toggle full screen
-        return {'fullscreen': True}
-    elif key.vk == libtcod.KEY_ESCAPE:
-        # Exit the menu
-        return {'exit': True}
-
-    return {}
 
 def handle_mouse(mouse):
     (x, y) = (mouse.cx, mouse.cy)
@@ -103,4 +105,3 @@ def handle_mouse(mouse):
         return {'right_click': (x, y)}
 
     return {}
-

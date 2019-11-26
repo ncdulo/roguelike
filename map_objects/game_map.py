@@ -1,4 +1,4 @@
-import tcod as libtcod
+import libtcodpy as libtcod
 from random import randint
 
 from components.ai import BasicMonster
@@ -9,12 +9,13 @@ from entity import Entity
 
 from game_messages import Message
 
-from item_functions import cast_fireball, cast_lightning, heal
+from item_functions import cast_confuse, cast_fireball, cast_lightning, heal
 
 from map_objects.rectangle import Rect
 from map_objects.tile import Tile
 
 from render_functions import RenderOrder
+
 
 class GameMap:
     def __init__(self, width, height):
@@ -27,66 +28,64 @@ class GameMap:
 
         return tiles
 
-    def make_map(self, max_rooms, room_min_size, room_max_size, map_width, map_height, player,
-            entities, max_monsters_per_room, max_items_per_room):
+    def make_map(self, max_rooms, room_min_size, room_max_size, map_width, map_height, player, entities,
+                 max_monsters_per_room, max_items_per_room):
         rooms = []
         num_rooms = 0
 
         for r in range(max_rooms):
-            # Random width and height
+            # random width and height
             w = randint(room_min_size, room_max_size)
             h = randint(room_min_size, room_max_size)
-
-            # Random position without going out of bounds of the map
+            # random position without going out of the boundaries of the map
             x = randint(0, map_width - w - 1)
             y = randint(0, map_height - h - 1)
 
             # "Rect" class makes rectangles easier to work with
             new_room = Rect(x, y, w, h)
 
-            # Run through the other rooms and see if they intersect with this one
+            # run through the other rooms and see if they intersect with this one
             for other_room in rooms:
                 if new_room.intersect(other_room):
                     break
             else:
-                # This means there were no intersections, this room is valid
+                # this means there are no intersections, so this room is valid
 
-                # "Paint" it to the map's tiles
+                # "paint" it to the map's tiles
                 self.create_room(new_room)
 
-                # Center coordinates of new room, will be useful later
+                # center coordinates of new room, will be useful later
                 (new_x, new_y) = new_room.center()
 
                 if num_rooms == 0:
-                    # This is the first room, where the player starts at
+                    # this is the first room, where the player starts at
                     player.x = new_x
                     player.y = new_y
                 else:
-                    # All rooms after the first:
-                    
-                    # Connect it to the previous room with a tunnel
-                    
-                    # Center coordinates of previous room
+                    # all rooms after the first:
+                    # connect it to the previous room with a tunnel
+
+                    # center coordinates of previous room
                     (prev_x, prev_y) = rooms[num_rooms - 1].center()
 
-                    # Flip a coin!
+                    # flip a coin (random number that is either 0 or 1)
                     if randint(0, 1) == 1:
-                        # First move horizontally, then vertically
+                        # first move horizontally, then vertically
                         self.create_h_tunnel(prev_x, new_x, prev_y)
                         self.create_v_tunnel(prev_y, new_y, new_x)
                     else:
-                        # First move vertically, then horizontally
+                        # first move vertically, then horizontally
                         self.create_v_tunnel(prev_y, new_y, prev_x)
                         self.create_h_tunnel(prev_x, new_x, new_y)
 
                 self.place_entities(new_room, entities, max_monsters_per_room, max_items_per_room)
 
-                # Finally, append the new room to the list
+                # finally, append the new room to the list
                 rooms.append(new_room)
                 num_rooms += 1
 
     def create_room(self, room):
-        # Go through the tiles in the rectangle and make them passable
+        # go through the tiles in the rectangle and make them passable
         for x in range(room.x1 + 1, room.x2):
             for y in range(room.y1 + 1, room.y2):
                 self.tiles[x][y].blocked = False
@@ -114,19 +113,20 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
 
+            # Check if an entity is already in that location
             if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 if randint(0, 100) < 80:
                     fighter_component = Fighter(hp=10, defense=0, power=3)
                     ai_component = BasicMonster()
 
                     monster = Entity(x, y, 'o', libtcod.desaturated_green, 'Orc', blocks=True,
-                            render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                                     render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
                 else:
                     fighter_component = Fighter(hp=16, defense=1, power=4)
                     ai_component = BasicMonster()
 
-                    monster = Entity(x, y, 'T', libtcod.darker_green, 'Troll', blocks=True,
-                            render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
+                    monster = Entity(x, y, 'T', libtcod.darker_green, 'Troll', blocks=True, fighter=fighter_component,
+                                     render_order=RenderOrder.ACTOR, ai=ai_component)
 
                 entities.append(monster)
 
@@ -134,23 +134,28 @@ class GameMap:
             x = randint(room.x1 + 1, room.x2 - 1)
             y = randint(room.y1 + 1, room.y2 - 1)
 
-            if not any([Entity for entity in entities if entity.x == x and entity.y == y]):
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]):
                 item_chance = randint(0, 100)
 
                 if item_chance < 70:
                     item_component = Item(use_function=heal, amount=4)
                     item = Entity(x, y, '!', libtcod.violet, 'Healing Potion', render_order=RenderOrder.ITEM,
-                            item=item_component)
-                if item_chance < 85:
+                                  item=item_component)
+                elif item_chance < 80:
                     item_component = Item(use_function=cast_fireball, targeting=True, targeting_message=Message(
                         'Left-click a target tile for the fireball, or right-click to cancel.', libtcod.light_cyan),
-                        damage=12, radius=3)
+                                          damage=12, radius=3)
                     item = Entity(x, y, '#', libtcod.red, 'Fireball Scroll', render_order=RenderOrder.ITEM,
-                            item=item_component)
+                                  item=item_component)
+                elif item_chance < 90:
+                    item_component = Item(use_function=cast_confuse, targeting=True, targeting_message=Message(
+                        'Left-click an enemy to confuse it, or right-click to cancel.', libtcod.light_cyan))
+                    item = Entity(x, y, '#', libtcod.light_pink, 'Confusion Scroll', render_order=RenderOrder.ITEM,
+                                  item=item_component)
                 else:
                     item_component = Item(use_function=cast_lightning, damage=20, maximum_range=5)
                     item = Entity(x, y, '#', libtcod.yellow, 'Lightning Scroll', render_order=RenderOrder.ITEM,
-                            item=item_component)
+                                  item=item_component)
 
                 entities.append(item)
 
@@ -159,4 +164,3 @@ class GameMap:
             return True
 
         return False
-
